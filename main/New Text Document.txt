@@ -1,0 +1,258 @@
+#include "gas_sensor.h"
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
+#include "esp_adc/adc_oneshot.h"
+#include "esp_log.h"
+#include "driver/gpio.h"
+#include "nvs_flash.h"
+#include "nvs.h"
+#include "NeonLED.h"
+#include "data_reporter.h"
+
+static const char *TAG = "GAS_SENS";
+
+// --- ACTUATOR CONFIG ---
+#define RLY_PIN     GPIO_NUM_15 // Exhaust Fan
+#define MOT1_PIN    GPIO_NUM_12 // Valve Control A
+#define MOT2_PIN    GPIO_NUM_13 // Valve Control B
+
+// --- TIMING CONFIG ---
+// (Values are now defined in gas_sensor.h, using them here)
+#define VALVE_CLOSE_TIME_MS     12000   // 12 Seconds to close valve
+#define RECOVERY_STABLE_TIME_MS 30000   // 30 Seconds wait before "No Issue"
+#define EMERGENCY_UPLINK_MS     30000   // Resend alert every 30s
+
+// Internal Globals
+static adc_oneshot_unit_handle_t adc_handle;
+static int gas_threshold = GAS_THRESHOLD_DEFAULT;
+
+// State Variables
+static volatile bool emergency_state = false;
+static bool valve_is_closed = false;
+static uint64_t last_uplink_time = 0;
+static uint64_t recovery_start_time = 0; 
+
+// NVS Key
+#define NVS_KEY_PREHEAT "preheated"
+
+// Config
+#define ADC_UNIT            ADC_UNIT_1
+#define ADC_ATTEN           ADC_ATTEN_DB_12 
+#define POLL_INTERVAL_MS    100             
+
+// --- ACTUATOR CONTROL ---
+static void actuators_init() {
+    gpio_config_t io_conf = {
+        .pin_bit_mask = (1ULL << RLY_PIN) | (1ULL << MOT1_PIN) | (1ULL << MOT2_PIN),
+        .mode = GPIO_MODE_OUTPUT,
+        .pull_up_en = 0,
+        .pull_down_en = 0,
+        .intr_type = GPIO_INTR_DISABLE
+    };
+    gpio_config(&io_conf);
+    
+    // Default State: Fan OFF, Motor Idle
+    gpio_set_level(RLY_PIN, 0);
+    gpio_set_level(MOT1_PIN, 0);
+    gpio_set_level(MOT2_PIN, 0);
+}
+
+static void trigger_alarm_hardware() {
+    ESP_LOGE(TAG, "!!! TRIGGERING ALARM HARDWARE !!!");
+    
+    // 1. Visual/Audio
+    neon_set_status(NEON_FAIL); // RED LED
+    gpio_set_level(BUZZER_GPIO, 1);
+
+    // 2. Fan ON
+    gpio_set_level(RLY_PIN, 1);
+
+    // 3. Close Valve (12s Drive)
+    // MOT1 LOW, MOT2 HIGH = Close
+    gpio_set_level(MOT1_PIN, 0);
+    gpio_set_level(MOT2_PIN, 1);
+    
+    // Block for 12s to ensure physical closure
+    if (!valve_is_closed) {
+        vTaskDelay(pdMS_TO_TICKS(VALVE_CLOSE_TIME_MS)); 
+        valve_is_closed = true;
+        ESP_LOGW(TAG, "Valve Close Sequence Complete.");
+    }
+}
+
+static void reset_alarm_hardware() {
+    ESP_LOGI(TAG, "SAFE: Resetting Hardware.");
+    
+    // 1. Visual/Audio
+    neon_set_status(NEON_STABLE); // GREEN LED
+    gpio_set_level(BUZZER_GPIO, 0);
+
+    // 2. Fan OFF
+    gpio_set_level(RLY_PIN, 0);
+
+    // 3. Stop Motor Drive (Release)
+    gpio_set_level(MOT1_PIN, 0);
+    gpio_set_level(MOT2_PIN, 0); 
+    
+    valve_is_closed = false;
+}
+
+// --- NEW: SILENCE FUNCTION ---
+void gas_silence_buzzer(void) {
+    if (emergency_state) {
+        ESP_LOGW(TAG, "Manual Override: Silencing Buzzer.");
+        gpio_set_level(BUZZER_GPIO, 0);
+    }
+}
+
+// --- NVS HELPERS ---
+static bool is_preheat_done(void) {
+    nvs_handle_t my_handle;
+    uint8_t done = 0;
+    if (nvs_open("storage", NVS_READONLY, &my_handle) == ESP_OK) {
+        nvs_get_u8(my_handle, NVS_KEY_PREHEAT, &done);
+        nvs_close(my_handle);
+    }
+    return (done == 1);
+}
+
+static void set_preheat_done(void) {
+    nvs_handle_t my_handle;
+    if (nvs_open("storage", NVS_READWRITE, &my_handle) == ESP_OK) {
+        nvs_set_u8(my_handle, NVS_KEY_PREHEAT, 1);
+        nvs_commit(my_handle);
+        nvs_close(my_handle);
+        ESP_LOGI(TAG, "Pre-Heat Flag Saved to NVS.");
+    }
+}
+
+// --- MAIN LOGIC ---
+static void gas_monitor_task(void *pvParameters) {
+    // Check NVS to determine mode
+    if (!is_preheat_done()) {
+        // --- MODE 1: 48-HOUR PRE-HEAT ---
+        ESP_LOGW(TAG, ">>> SYSTEM MODE: PRE-HEAT (First Time Setup) <<<");
+        ESP_LOGW(TAG, "Starting %d minute burn-in period...", PRE_HEAT_DURATION_MIN);
+        
+        neon_set_status(NEON_CONNECTING); // Blue
+        
+        TickType_t start = xTaskGetTickCount();
+        TickType_t duration = pdMS_TO_TICKS(PRE_HEAT_DURATION_MIN * 60 * 1000);
+        
+        while ((xTaskGetTickCount() - start) < duration) {
+            // Log remaining time every minute so you know it's working
+            uint32_t elapsed_ms = (xTaskGetTickCount() - start) * portTICK_PERIOD_MS;
+            uint32_t remaining_min = (duration * portTICK_PERIOD_MS - elapsed_ms) / 60000;
+            ESP_LOGI(TAG, "Pre-Heating... %lu minutes remaining.", remaining_min);
+            
+            vTaskDelay(pdMS_TO_TICKS(60000)); // Wait 1 minute
+        }
+        
+        set_preheat_done(); // Mark as complete forever
+    } else {
+        // --- MODE 2: STANDARD BOOT ---
+        ESP_LOGI(TAG, ">>> SYSTEM MODE: POST-HEAT (Standard Boot) <<<");
+    }
+
+    // --- ALWAYS RUN 3-MIN WARM-UP ---
+    ESP_LOGI(TAG, "Starting Warm-Up Phase (%d min)...", WARM_UP_DURATION_MS / 60000);
+    neon_set_status(NEON_CONNECTING); // Blue
+    vTaskDelay(pdMS_TO_TICKS(WARM_UP_DURATION_MS));
+    
+    // --- MONITORING START ---
+    ESP_LOGI(TAG, ">>> Sensor Active. Monitoring Started. <<<");
+    if (!emergency_state) neon_set_status(NEON_STABLE); // Green
+
+    int adc_raw;
+    while (1) {
+        ESP_ERROR_CHECK(adc_oneshot_read(adc_handle, GAS_ADC_CHANNEL, &adc_raw));
+        uint64_t now = xTaskGetTickCount() * portTICK_PERIOD_MS;
+
+        // --- DANGER ZONE ---
+        if (adc_raw > gas_threshold) {
+            vTaskDelay(pdMS_TO_TICKS(50)); // Debounce
+            adc_oneshot_read(adc_handle, GAS_ADC_CHANNEL, &adc_raw);
+
+            if (adc_raw > gas_threshold) {
+                recovery_start_time = 0; // Reset recovery timer
+
+                if (!emergency_state) {
+                    emergency_state = true;
+                    ESP_LOGE(TAG, "!!! GAS DETECTED (%d) !!!", adc_raw);
+                    trigger_alarm_hardware();
+                }
+            }
+        }
+        // --- SAFE ZONE (But maybe waiting for stability) ---
+        else {
+            if (emergency_state) {
+                if (recovery_start_time == 0) {
+                    ESP_LOGI(TAG, "Gas Level Normalized. Starting 30s Recovery Timer...");
+                    recovery_start_time = now;
+                    // FIX: REMOVED "gpio_set_level(BUZZER_GPIO, 0);"
+                    // The buzzer must stay ON until the full 30s recovery is complete.
+                }
+
+                if ((now - recovery_start_time) >= RECOVERY_STABLE_TIME_MS) {
+                    ESP_LOGI(TAG, "Recovery Complete (30s Stable). Resetting System.");
+                    
+                    emergency_state = false;
+                    recovery_start_time = 0;
+                    
+                    reset_alarm_hardware(); // This turns off the buzzer
+                    
+                    ESP_LOGI(TAG, "Sending NO ISSUE Packet...");
+                    data_reporter_send_status(); // Sends "no issue"
+                }
+            }
+        }
+
+        // --- UNIVERSAL PACKET SENDER (Runs independently) ---
+        // If we are in an emergency state (Danger OR Recovery), we send packet every 30s
+        if (emergency_state) {
+            if ((now - last_uplink_time) > EMERGENCY_UPLINK_MS) {
+                ESP_LOGE(TAG, "Sending GAS LEAK Packet...");
+                data_reporter_send_emergency(adc_raw);
+                last_uplink_time = now;
+            }
+        }
+
+        vTaskDelay(pdMS_TO_TICKS(POLL_INTERVAL_MS));
+    }
+}
+
+void gas_sensor_init(void) {
+    actuators_init();
+
+    // Init Buzzer
+    gpio_config_t io_conf = {
+        .pin_bit_mask = (1ULL << BUZZER_GPIO),
+        .mode = GPIO_MODE_OUTPUT,
+        .pull_up_en = 0,
+        .pull_down_en = 0,
+        .intr_type = GPIO_INTR_DISABLE
+    };
+    gpio_config(&io_conf);
+    gpio_set_level(BUZZER_GPIO, 0);
+
+    // Init ADC
+    adc_oneshot_unit_init_cfg_t init_config = { .unit_id = ADC_UNIT };
+    ESP_ERROR_CHECK(adc_oneshot_new_unit(&init_config, &adc_handle));
+
+    adc_oneshot_chan_cfg_t config = {
+        .bitwidth = ADC_BITWIDTH_DEFAULT,
+        .atten = ADC_ATTEN,
+    };
+    ESP_ERROR_CHECK(adc_oneshot_config_channel(adc_handle, GAS_ADC_CHANNEL, &config));
+
+    // Priority 10 (High)
+    xTaskCreate(gas_monitor_task, "gas_mon", 4096, NULL, 10, NULL);
+}
+
+bool gas_is_emergency(void) {
+    return emergency_state;
+}
+
+void gas_stop_alarm(void) {
+    // Helper if needed for manual silence
+}
