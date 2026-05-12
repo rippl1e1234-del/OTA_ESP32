@@ -1,0 +1,8 @@
+Command: ninja all
+[1/4] C:\WINDOWS\system32\cmd.exe /C "cd /D D:\ESP-IDF_VSCODE\OTA_Codes\SGLD_V1.1.3_OTA_MQTT_WIFI_GSM_OTA\Version2_SGLD_Working\station\build\esp-idf\esptool_py && d:\esp_tools\python_env\idf5.5_py3.11_env\Scripts\python.exe D:/ESP_SOFTWARE/v5.5.1/esp-idf/components/partition_table/check_sizes.py --offset 0x8000 partition --type app D:/ESP-IDF_VSCODE/OTA_Codes/SGLD_V1.1.3_OTA_MQTT_WIFI_GSM_OTA/Version2_SGLD_Working/station/build/partition_table/partition-table.bin D:/ESP-IDF_VSCODE/OTA_Codes/SGLD_V1.1.3_OTA_MQTT_WIFI_GSM_OTA/Version2_SGLD_Working/station/build/wifi_station.bin"
+wifi_station.bin binary size 0x11a070 bytes. Smallest app partition is 0x140000 bytes. 0x25f90 bytes (12%) free.
+[2/4] Performing build step for 'bootloader'
+[1/1] C:\WINDOWS\system32\cmd.exe /C "cd /D D:\ESP-IDF_VSCODE\OTA_Codes\SGLD_V1.1.3_OTA_MQTT_WIFI_GSM_OTA\Version2_SGLD_Working\station\build\bootloader\esp-idf\esptool_py && d:\esp_tools\python_env\idf5.5_py3.11_env\Scripts\python.exe D:/ESP_SOFTWARE/v5.5.1/esp-idf/components/partition_table/check_sizes.py --offset 0x8000 bootloader 0x1000 D:/ESP-IDF_VSCODE/OTA_Codes/SGLD_V1.1.3_OTA_MQTT_WIFI_GSM_OTA/Version2_SGLD_Working/station/build/bootloader/bootloader.bin"
+Bootloader binary size 0x6650 bytes. 0x9b0 bytes (9%) free.
+[3/4] No install step for 'bootloader'
+[4/4] Completed 'bootloader'

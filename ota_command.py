@@ -6,7 +6,7 @@ PORT = 8883
 USERNAME = "Ripple"
 PASSWORD = "Ripple1234"
 TOPIC = "esp32/ota/command"
-COMMAND = '{"version":"1.0.8","checksum":"044bf82bdf5e0e36e1a68f151549b142a922c9e8a781017cdde0eab8b7b63170","size":1155104}'
+COMMAND = '{"version":"1.0.9","checksum":"7e05297d804930f42e58aad00738f86053ee40913b0c860652c6b6dda20a2442","size":1155184}'
 
 client = mqtt.Client()
 client.username_pw_set(USERNAME, PASSWORD)

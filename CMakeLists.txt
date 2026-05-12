@@ -9,4 +9,4 @@ if(RLY_PIN_ALT)
     add_compile_definitions(RLY_PIN_ALT)
 endif()
 
-project(wifi_station VERSION 1.0.6)
+project(wifi_station VERSION 1.0.9)

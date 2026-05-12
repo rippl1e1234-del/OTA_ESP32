@@ -296,6 +296,23 @@ void gsm_abort_current_operation(void) {
     }
 }
 
+static bool gsm_sync_time_for_ssl(void) {
+    // Obtain current UTC time from the network (GSM) and write to modem’s clock
+    char time_str[32];
+    if (!gsm_get_time_str(time_str, sizeof(time_str))) {
+        ESP_LOGW(TAG, "Could not get GSM time for SSL, trying NTP...");
+        // Alternative: use WiFi NTP if available
+    }
+    // GSM time format is Unix timestamp string. Convert to "YY/MM/DD,HH:MM:SS"
+    time_t t = (time_t)atol(time_str);
+    struct tm *utc = gmtime(&t);
+    char cmd[64];
+    snprintf(cmd, sizeof(cmd), "AT+CCLK=\"%02d/%02d/%02d,%02d:%02d:%02d\"\r\n",
+             utc->tm_year - 100, utc->tm_mon + 1, utc->tm_mday,
+             utc->tm_hour, utc->tm_min, utc->tm_sec);
+    return send_at_cmd(cmd, "OK", 2000);
+}
+
 // ============================================================
 //  HTTP POST
 // ============================================================
@@ -537,6 +554,9 @@ void gsm_start_monitoring(void) {
 // ============================================================
 //  OTA DOWNLOAD (UPDATED FOR SIMCOM A7677S HTTPS)
 // ============================================================
+// ============================================================
+//  OTA DOWNLOAD (UPDATED FOR SIMCOM A7677S HTTPS)
+// ============================================================
 bool gsm_ota_download_to_partition(const char *url, esp_ota_handle_t ota_handle, size_t *out_size) {
     if (gsm_mutex == NULL) return false;
 
@@ -574,17 +594,19 @@ bool gsm_ota_download_to_partition(const char *url, esp_ota_handle_t ota_handle,
         }
         
         // --- A7677S SPECIFIC HTTPS CONFIGURATION ---
-       // --- A7677S SPECIFIC HTTPS CONFIGURATION ---
         if (strncmp(url, "https", 5) == 0) {
+            // DO NOT use AT+HTTPSSL=1 here. It will cause an ERROR on A7677S.
+            
             // Set SSL version to TLS 1.2 for Context 0
             send_at_cmd("AT+CSSLCFG=\"sslversion\",0,4\r\n", "OK", 1000);
             
             // Set authmode to 0 (No certificate verification) for Context 0
             send_at_cmd("AT+CSSLCFG=\"authmode\",0,0\r\n", "OK", 1000);
             
-            // Bypass RTC time check (Prevents 715 errors if the modem's clock is wrong)
-            send_at_cmd("AT+CSSLCFG=\"ignorertctime\",0,1\r\n", "OK", 1000);            
-            // FIX: Link the HTTP session to SSL Context 0
+            // Bypass RTC time check (context 0, value 1)
+            send_at_cmd("AT+CSSLCFG=\"ignorertctime\",0,1\r\n", "OK", 1000);
+            
+            // IMPORTANT: Link the HTTP session to SSL Context 0 (This enables HTTPS)
             send_at_cmd("AT+HTTPPARA=\"SSLCFG\",0\r\n", "OK", 1000);
         }
 
@@ -592,6 +614,7 @@ bool gsm_ota_download_to_partition(const char *url, esp_ota_handle_t ota_handle,
         snprintf(cmd, sizeof(cmd), "AT+HTTPPARA=\"URL\",\"%s\"\r\n", url);
         if (!send_at_cmd(cmd, "OK", 2000)) goto session_retry;
 
+        // Resume support
         if (written > 0) {
             snprintf(cmd, sizeof(cmd), "AT+HTTPPARA=\"USERDATA\",\"Range: bytes=%u-\"\r\n", (unsigned int)written);
             send_at_cmd(cmd, "OK", 2000);

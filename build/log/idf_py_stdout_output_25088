@@ -1,0 +1,131 @@
+Command: d:\esp_tools\python_env\idf5.5_py3.11_env\Scripts\python.exe d:\ESP_SOFTWARE\v5.5.1\esp-idf\tools/idf_monitor.py -p COM3 -b 115200 --toolchain-prefix xtensa-esp32-elf- --target esp32 --revision 0 D:\ESP-IDF_VSCODE\OTA_Codes\SGLD_V1.1.3_OTA_MQTT_WIFI_GSM_OTA\Version2_SGLD_Working\station\build\wifi_station.elf D:\ESP-IDF_VSCODE\OTA_Codes\SGLD_V1.1.3_OTA_MQTT_WIFI_GSM_OTA\Version2_SGLD_Working\station\build\bootloader\bootloader.elf --force-color -m 'd:\esp_tools\python_env\idf5.5_py3.11_env\Scripts\python.exe' 'd:\ESP_SOFTWARE\v5.5.1\esp-idf\tools\idf.py'
+ets Jul 29 2019 12:21:46
+
+rst:0x1 (POWERON_RESET),boot:0x16 (SPI_FAST_FLASH_BOOT)
+configsip: 0, SPIWP:0xee
+clk_drv:0x00,q_drv:0x00,d_drv:0x00,cs0_drv:0x00,hd_drv:0x00,wp_drv:0x00
+mode:DIO, clock div:2
+load:0x3fff0030,len:6348
+ho 0 tail 12 room 4
+load:0x40078000,len:15916
+load:0x40080400,len:3836
+entry 0x40080634
+[0;32mI (29) boot: ESP-IDF v5.5.1 2nd stage bootloader[0m
+[0;32mI (29) boot: Multicore bootloader[0m
+[0;32mI (30) boot: chip revision: v3.1[0m
+[0;32mI (30) boot.esp32: SPI Speed      : 40MHz[0m
+[0;32mI (33) boot.esp32: SPI Mode       : DIO[0m
+[0;32mI (36) boot.esp32: SPI Flash Size : 4MB[0m
+[0;32mI (40) boot: Enabling RNG early entropy source...[0m
+[0;32mI (45) boot: Partition Table:[0m
+[0;32mI (47) boot: ## Label            Usage          Type ST Offset   Length[0m
+[0;32mI (53) boot:  0 nvs              WiFi data        01 02 00009000 00004000[0m
+[0;32mI (60) boot:  1 otadata          OTA data         01 00 0000d000 00002000[0m
+[0;32mI (67) boot:  2 phy_init         RF data          01 01 0000f000 00001000[0m
+[0;32mI (73) boot:  3 factory          factory app      00 00 00010000 00140000[0m
+[0;32mI (80) boot:  4 ota_0            OTA app          00 10 00150000 00140000[0m
+[0;32mI (86) boot:  5 ota_1            OTA app          00 11 00290000 00140000[0m
+[0;32mI (93) boot: End of partition table[0m
+[0;32mI (96) boot: Defaulting to factory image[0m
+[0;32mI (100) esp_image: segment 0: paddr=00010020 vaddr=3f400020 size=3d384h (250756) map[0m
+[0;32mI (193) esp_image: segment 1: paddr=0004d3ac vaddr=3ffb0000 size=02c6ch ( 11372) load[0m
+[0;32mI (197) esp_image: segment 2: paddr=00050020 vaddr=400d0020 size=be7ach (780204) map[0m
+[0;32mI (464) esp_image: segment 3: paddr=0010e7d4 vaddr=3ffb2c6c size=015d4h (  5588) load[0m
+[0;32mI (466) esp_image: segment 4: paddr=0010fdb0 vaddr=40080000 size=1a274h (107124) load[0m
+[0;32mI (510) esp_image: segment 5: paddr=0012a02c vaddr=50000000 size=00020h (    32) load[0m
+[0;32mI (522) boot: Loaded app from partition at offset 0x10000[0m
+[0;32mI (523) boot: Disabling RNG early entropy source...[0m
+[0;32mI (533) cpu_start: Multicore app[0m
+[0;32mI (541) cpu_start: Pro cpu start user code[0m
+[0;32mI (542) cpu_start: cpu freq: 160000000 Hz[0m
+[0;32mI (542) app_init: Application information:[0m
+[0;32mI (542) app_init: Project name:     wifi_station[0m
+[0;32mI (546) app_init: App version:      1.0.9[0m
+[0;32mI (550) app_init: ELF file SHA256:  05dd04809...[0m
+[0;32mI (554) app_init: ESP-IDF:          v5.5.1[0m
+[0;32mI (558) efuse_init: Min chip rev:     v0.0[0m
+[0;32mI (562) efuse_init: Max chip rev:     v3.99 [0m
+[0;32mI (566) efuse_init: Chip rev:         v3.1[0m
+[0;32mI (570) heap_init: Initializing. RAM available for dynamic allocation:[0m
+[0;32mI (576) heap_init: At 3FFAE6E0 len 00001920 (6 KiB): DRAM[0m
+[0;32mI (581) heap_init: At 3FFB8BA8 len 00027458 (157 KiB): DRAM[0m
+[0;32mI (586) heap_init: At 3FFE0440 len 00003AE0 (14 KiB): D/IRAM[0m
+[0;32mI (592) heap_init: At 3FFE4350 len 0001BCB0 (111 KiB): D/IRAM[0m
+[0;32mI (597) heap_init: At 4009A274 len 00005D8C (23 KiB): IRAM[0m
+[0;32mI (604) spi_flash: detected chip: generic[0m
+[0;32mI (606) spi_flash: flash io: dio[0m
+[0;33mW (609) spi_flash: Detected size(8192k) larger than the size in the binary image header(4096k). Using the size in the binary image header.[0m
+[0;32mI (622) main_task: Started on CPU0[0m
+[0;32mI (632) main_task: Calling app_main()[0m
+[0;32mI (632) MAIN_APP: Firmware version: 1.0.9[0m
+[0;32mI (662) NEON_LED: Initializing NeoPixel on GPIO 5[0m
+[0;32mI (662) MAIN_APP: >>> LEGACY BOOT SEQUENCE STARTED <<<[0m
+[0;32mI (662) MAIN_APP: Buzzer ON[0m
+[0;32mI (1162) MAIN_APP: LED: Red[0m
+[0;32mI (1162) NEON_LED: LED: Red (Fail/Alarm)[0m
+[0;32mI (1662) MAIN_APP: LED: Green[0m
+[0;32mI (1662) NEON_LED: LED: Green (Stable) - stays on continuously[0m
+[0;32mI (2162) MAIN_APP: LED: Blue[0m
+[0;32mI (2162) NEON_LED: LED: Blue (Connecting)[0m
+[0;32mI (2662) MAIN_APP: Buzzer OFF[0m
+[0;32mI (2662) MAIN_APP: >>> LEGACY BOOT SEQUENCE COMPLETE <<<[0m
+[0;32mI (2662) GAS_SENS: Starting Warm-Up Phase (3 min)...[0m
+[0;32mI (2662) NEON_LED: LED: Blue (Connecting)[0m
+[0;32mI (2662) GSM_MGR: Initializing GSM...[0m
+[0;32mI (2672) GSM_MGR: TX >> AT[0m
+[0;32mI (2742) GSM_MGR: RX << OK [0m
+[0;32mI (2742) GSM_MGR: TX >> ATE0[0m
+[0;32mI (2812) GSM_MGR: RX << OK [0m
+[0;32mI (2812) GSM_MGR: TX >> AT[0m
+[0;32mI (2822) wifi:wifi driver task: 3ffc8268, prio:23, stack:6656, core=0[0m
+[0;32mI (2842) wifi:wifi firmware version: 14da9b7[0m
+[0;32mI (2842) wifi:wifi certification version: v7.0[0m
+[0;32mI (2842) wifi:config NVS flash: enabled[0m
+[0;32mI (2842) wifi:config nano formatting: disabled[0m
+[0;32mI (2842) wifi:Init data frame dynamic rx buffer num: 32[0m
+[0;32mI (2852) wifi:Init static rx mgmt buffer num: 5[0m
+[0;32mI (2852) wifi:Init management short buffer num: 32[0m
+[0;32mI (2862) wifi:Init dynamic tx buffer num: 32[0m
+[0;32mI (2862) wifi:Init static rx buffer size: 1600[0m
+[0;32mI (2862) wifi:Init static rx buffer num: 10[0m
+[0;32mI (2872) wifi:Init dynamic rx buffer num: 32[0m
+[0;32mI (2872) wifi_init: rx ba win: 6[0m
+[0;32mI (2872) wifi_init: accept mbox: 6[0m
+[0;32mI (2882) GSM_MGR: RX << OK [0m
+[0;32mI (2882) GSM_MGR: TX >> AT+CPIN?[0m
+[0;32mI (2882) wifi_init: tcpip mbox: 32[0m
+[0;32mI (2892) wifi_init: udp mbox: 6[0m
+[0;32mI (2892) wifi_init: tcp mbox: 6[0m
+[0;32mI (2892) wifi_init: tcp tx win: 5760[0m
+[0;32mI (2892) wifi_init: tcp rx win: 5760[0m
+[0;32mI (2902) wifi_init: tcp mss: 1440[0m
+[0;32mI (2902) wifi_init: WiFi IRAM OP enabled[0m
+[0;32mI (2902) wifi_init: WiFi RX IRAM OP enabled[0m
+[0;32mI (2912) WIFI_MGR: Connect to STA...[0m
+[0;32mI (2912) WIFI_MGR: Read Credentials -> SSID: Ripple_Airtel_Deco[0m
+[0;33mW (2922) wifi:Password length matches WPA2 standards, authmode threshold changes from OPEN to WPA2[0m
+[0;32mI (2932) phy_init: phy_version 4861,b71b5ad,Aug  5 2025,11:16:06[0m
+[0;32mI (2952) GSM_MGR: RX << +CPIN: READY OK [0m
+[0;32mI (2952) GSM_MGR: TX >> AT+CGPADDR=1[0m
+[0;32mI (3012) wifi:mode : sta (20:e7:c8:bd:6b:94)[0m
+[0;32mI (3012) wifi:enable tsf[0m
+[0;32mI (3022) GSM_MGR: RX << +CGPADDR: 1,10.41.97.98 OK [0m
+[0;32mI (3022) GSM_MGR: GSM Network Status: Connected[0m
+[0;32mI (3022) TIME_MGR: Initializing SNTP...[0m
+[0;32mI (3022) MAIN_APP: === STARTUP: Waiting 20s for networks to stabilize ===[0m
+[0;32mI (5432) wifi:new:<5,1>, old:<1,0>, ap:<255,255>, sta:<5,1>, prof:1, snd_ch_cfg:0x0[0m
+[0;32mI (5432) wifi:state: init -> auth (0xb0)[0m
+[0;32mI (5462) wifi:state: auth -> assoc (0x0)[0m
+[0;32mI (5482) wifi:state: assoc -> run (0x10)[0m
+[0;32mI (5512) wifi:connected with Ripple_Airtel_Deco, aid = 2, channel 5, 40U, bssid = bc:07:1d:56:74:d6[0m
+[0;32mI (5512) wifi:security: WPA2-PSK, phy: bgn, rssi: -57[0m
+[0;32mI (5522) wifi:pm start, type: 1[0m
+
+[0;32mI (5522) wifi:dp: 1, bi: 102400, li: 3, scale listen interval from 307200 us to 307200 us[0m
+[0;32mI (5542) wifi:<ba-add>idx:0 (ifx:0, bc:07:1d:56:74:d6), tid:0, ssn:0, winSize:64[0m
+[0;32mI (5592) wifi:AP's beacon interval = 102400 us, DTIM period = 1[0m
+[0;32mI (6552) esp_netif_handlers: sta ip: 192.168.68.57, mask: 255.255.252.0, gw: 192.168.68.1[0m
+[0;32mI (6552) MAIN_APP: Connected! IP:192.168.68.57[0m
+[0;32mI (6662) wifi:<ba-add>idx:1 (ifx:0, bc:07:1d:56:74:d6), tid:6, ssn:2, winSize:64[0m
+[0;32mI (7262) esp-x509-crt-bundle: Certificate validated[0m
+[0;32mI (8362) OTA_MQTT: MQTT connected[0m
