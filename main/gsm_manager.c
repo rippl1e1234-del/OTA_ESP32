@@ -583,8 +583,7 @@ bool gsm_ota_download_to_partition(const char *url, esp_ota_handle_t ota_handle,
             send_at_cmd("AT+CSSLCFG=\"authmode\",0,0\r\n", "OK", 1000);
             
             // Bypass RTC time check (Prevents 715 errors if the modem's clock is wrong)
-            send_at_cmd("AT+CSSLCFG=\"ignorertctime\",1\r\n", "OK", 1000);
-            
+            send_at_cmd("AT+CSSLCFG=\"ignorertctime\",0,1\r\n", "OK", 1000);            
             // FIX: Link the HTTP session to SSL Context 0
             send_at_cmd("AT+HTTPPARA=\"SSLCFG\",0\r\n", "OK", 1000);
         }

@@ -26,7 +26,8 @@ static const char *TAG = "OTA_MQTT";
 typedef enum {
     OTA_IDLE,
     OTA_WAITING_START,   // connected, waiting for command
-    OTA_DOWNLOADING,     // receiving firmware chunks
+    OTA_DOWNLOADING,     // receiving firmware chunks via Wi-Fi
+    OTA_GSM_DOWNLOADING  // Async GSM task is handling it
 } ota_state_t;
 
 // ----- OTA global state (protected by ota_mutex) -----
@@ -285,7 +286,9 @@ static void mqtt_event_handler(void *handler_args, esp_event_base_t base,
             ESP_LOGW(TAG, "MQTT disconnected");
             ota_lock();
             if (ota_state == OTA_DOWNLOADING) {
-                ota_abort_locked("MQTT disconnected during OTA");
+                ota_abort_locked("MQTT disconnected during Wi-Fi OTA");
+            } else if (ota_state == OTA_GSM_DOWNLOADING) {
+                ESP_LOGI(TAG, "MQTT disconnected, but GSM OTA is running. Ignoring.");
             } else {
                 ota_state = OTA_IDLE;
             }
@@ -385,7 +388,7 @@ static void mqtt_event_handler(void *handler_args, esp_event_base_t base,
                     cJSON_Delete(json);
                     break;
                 }
-                ota_state = OTA_DOWNLOADING;
+                ota_state = OTA_GSM_DOWNLOADING;
                 ota_unlock();
 
                 gsm_ota_task_params_t *task_params = malloc(sizeof(gsm_ota_task_params_t));
