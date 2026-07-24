@@ -1,6 +1,6 @@
 {
-  "version": "1.1.11",
-  "url": "https://raw.githubusercontent.com/rippl1e1234-del/OTA_ESP32/main/OTA_BIN/wifi_station_1.1.11.bin",
-  "size": 1139216,
-  "sha256": "b4c085e5d1876a3db6c395263d8df8b49478cfc6f49409eda21cd0c61e4935c9"
+    "version": "1.1.12",
+    "url": "https://raw.githubusercontent.com/rippl1e1234-del/OTA_ESP32/main/OTA_BIN/wifi_station_1.1.12.bin",
+    "size": 1139536,
+    "sha256": "0d6c79cc10ff0dad00410af5629c9e653b29cd4efd66d90f5435f8b0a5acde72"
 }
